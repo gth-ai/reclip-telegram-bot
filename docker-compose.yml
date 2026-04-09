@@ -1,0 +1,62 @@
+services:
+  reclip:
+    build: ./reclip
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8899
+      - MAX_CONCURRENT_DOWNLOADS=${MAX_CONCURRENT_DOWNLOADS:-3}
+      - DOWNLOADS_PATH=/downloads
+    volumes:
+      - downloads:/downloads
+    networks:
+      - internal
+    restart: unless-stopped
+
+  bot:
+    build: ./bot
+    environment:
+      - BOT_TOKEN=${BOT_TOKEN}
+      - RECLIP_URL=http://reclip:8899
+      - TELEGRAM_BOT_API_URL=http://telegram-bot-api:8081
+      - DOWNLOADS_PATH=/downloads
+      - CLEANUP_MAX_AGE_HOURS=${CLEANUP_MAX_AGE_HOURS:-1}
+      - CLEANUP_MAX_DISK_MB=${CLEANUP_MAX_DISK_MB:-5000}
+      - CLEANUP_INTERVAL_SECONDS=${CLEANUP_INTERVAL_SECONDS:-300}
+    volumes:
+      - downloads:/downloads
+    depends_on:
+      - reclip
+      - telegram-bot-api
+    networks:
+      - internal
+    restart: unless-stopped
+
+  telegram-bot-api:
+    image: aiogram/telegram-bot-api:latest
+    environment:
+      - TELEGRAM_API_ID=${TELEGRAM_API_ID}
+      - TELEGRAM_API_HASH=${TELEGRAM_API_HASH}
+      - TELEGRAM_LOCAL=true
+    volumes:
+      - telegram-bot-api-data:/var/lib/telegram-bot-api
+    networks:
+      - internal
+    restart: unless-stopped
+
+  # Optional: expose reclip web UI on host
+  # Uncomment to access web UI at http://localhost:8899
+  # reclip-web:
+  #   extends:
+  #     service: reclip
+  #   ports:
+  #     - "${RECLIP_WEB_PORT:-8899}:8899"
+  #   networks:
+  #     - internal
+
+volumes:
+  downloads:
+  telegram-bot-api-data:
+
+networks:
+  internal:
+    driver: bridge

@@ -1,0 +1,7 @@
+.env
+.venv/
+downloads/
+__pycache__/
+*.pyc
+.pytest_cache/
+telegram-bot-api-data/
