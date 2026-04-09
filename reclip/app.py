@@ -11,6 +11,7 @@ DOWNLOAD_DIR = os.environ.get("DOWNLOADS_PATH", os.path.join(os.path.dirname(__f
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
 MAX_CONCURRENT_DOWNLOADS = int(os.environ.get("MAX_CONCURRENT_DOWNLOADS", 3))
+DOWNLOAD_TIMEOUT = int(os.environ.get("DOWNLOAD_TIMEOUT", 900))
 download_semaphore = threading.Semaphore(MAX_CONCURRENT_DOWNLOADS)
 
 jobs = {}
@@ -82,7 +83,7 @@ def _do_download(job_id, url, format_choice, format_id):
             except (json.JSONDecodeError, ValueError):
                 pass
 
-        returncode = process.wait(timeout=300)
+        returncode = process.wait(timeout=DOWNLOAD_TIMEOUT)
 
         if returncode != 0:
             job["status"] = "error"
@@ -125,7 +126,7 @@ def _do_download(job_id, url, format_choice, format_id):
         process.kill()
         process.wait()
         job["status"] = "error"
-        job["error"] = "Download timed out (5 min limit)"
+        job["error"] = f"Download timed out ({DOWNLOAD_TIMEOUT // 60} min limit)"
     except Exception as e:
         job["status"] = "error"
         job["error"] = str(e)

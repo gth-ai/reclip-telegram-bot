@@ -152,12 +152,21 @@ async def cmd_setformat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(f"Default format set to: {f}")
 
 
-async def cmd_mp3(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Direct MP3 download without format picker."""
+def _extract_urls_from_command(update: Update) -> list[str]:
+    """Extract URLs from command text or from the replied-to message."""
     text = update.message.text or ""
     urls = URL_REGEX.findall(text)
+    if not urls and update.message.reply_to_message:
+        reply_text = update.message.reply_to_message.text or update.message.reply_to_message.caption or ""
+        urls = URL_REGEX.findall(reply_text)
+    return urls
+
+
+async def cmd_mp3(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Direct MP3 download without format picker."""
+    urls = _extract_urls_from_command(update)
     if not urls:
-        await update.message.reply_text("Usage: /mp3 <link>")
+        await update.message.reply_text("Usage: /mp3 <link>\nOr reply to a message containing a link.")
         return
     for url in urls:
         msg = await update.message.reply_text("Downloading MP3...")
@@ -166,10 +175,9 @@ async def cmd_mp3(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def cmd_mp4(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Direct best-quality MP4 download without format picker."""
-    text = update.message.text or ""
-    urls = URL_REGEX.findall(text)
+    urls = _extract_urls_from_command(update)
     if not urls:
-        await update.message.reply_text("Usage: /mp4 <link>")
+        await update.message.reply_text("Usage: /mp4 <link>\nOr reply to a message containing a link.")
         return
     for url in urls:
         msg = await update.message.reply_text("Downloading MP4 (best quality)...")
@@ -205,7 +213,7 @@ async def _direct_download(update: Update, status_msg, url: str, fmt: str, forma
         return
 
     file_path = None
-    for _ in range(150):
+    for _ in range(450):
         await asyncio.sleep(2)
         try:
             status = await poll_status(job_id)
@@ -496,7 +504,7 @@ async def download_and_send(query, entry: dict, format: str, format_id: str | No
         return
 
     file_path = None
-    for _ in range(150):
+    for _ in range(450):
         await asyncio.sleep(2)
         try:
             status = await poll_status(job_id)

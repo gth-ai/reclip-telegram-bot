@@ -5,6 +5,7 @@ services:
       - HOST=0.0.0.0
       - PORT=8899
       - MAX_CONCURRENT_DOWNLOADS=${MAX_CONCURRENT_DOWNLOADS:-3}
+      - DOWNLOAD_TIMEOUT=${DOWNLOAD_TIMEOUT:-900}
       - DOWNLOADS_PATH=/downloads
     volumes:
       - downloads:/downloads
