@@ -26,7 +26,7 @@ def _require_auth(request: Request) -> str:
 
 @router.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request) -> HTMLResponse:
-    return templates.TemplateResponse("login.html", {"request": request, "error": None})
+    return templates.TemplateResponse(request, "login.html", {"error": None})
 
 
 @router.post("/login")
@@ -41,8 +41,8 @@ async def login_submit(request: Request) -> HTMLResponse:
         return response
 
     return templates.TemplateResponse(
-        "login.html",
-        {"request": request, "error": "Invalid credentials"},
+        request, "login.html",
+        {"error": "Invalid credentials"},
         status_code=401,
     )
 
@@ -63,7 +63,7 @@ async def dashboard_page(request: Request) -> HTMLResponse:
     user = get_current_user(request)
     if not user:
         return RedirectResponse(url="/login", status_code=303)
-    return templates.TemplateResponse("dashboard.html", {"request": request, "user": user})
+    return templates.TemplateResponse(request, "dashboard.html", {"user": user})
 
 
 @router.get("/history", response_class=HTMLResponse)
@@ -89,9 +89,8 @@ async def history_page(
         date_to=date_to,
     )
     return templates.TemplateResponse(
-        "history.html",
+        request, "history.html",
         {
-            "request": request,
             "user": user,
             "data": data,
             "platform": platform,
@@ -115,8 +114,8 @@ async def errors_page(
 
     errors = await db.get_error_downloads(date_from=date_from, date_to=date_to)
     return templates.TemplateResponse(
-        "errors.html",
-        {"request": request, "user": user, "errors": errors},
+        request, "errors.html",
+        {"user": user, "errors": errors},
     )
 
 
@@ -146,9 +145,8 @@ async def admin_page(request: Request) -> HTMLResponse:
     disk_total, disk_used, disk_free = shutil.disk_usage(str(downloads_path) if downloads_path.exists() else "/")
 
     return templates.TemplateResponse(
-        "admin.html",
+        request, "admin.html",
         {
-            "request": request,
             "user": user,
             "files": files,
             "disk_total": disk_total,
