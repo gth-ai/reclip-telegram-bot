@@ -1,14 +1,115 @@
-<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8"/><title>reclip admin — admin</title></head>
-<body>
-<h1>Admin</h1>
-<p><a href="/">Dashboard</a> | <a href="/logout">Logout</a></p>
-<h2>Files ({{ files|length }})</h2>
-{% for f in files %}
-<div>{{ f.name }} — {{ f.size }} bytes</div>
-{% endfor %}
-<h2>Disk</h2>
-<p>Total: {{ disk_total }} | Used: {{ disk_used }} | Free: {{ disk_free }}</p>
-</body>
-</html>
+{% extends "base.html" %}
+{% set active = "admin" %}
+
+{% block title %} — admin{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Admin</h1>
+
+<!-- Disk Management -->
+<div class="card section-card">
+  <div class="card-header">
+    <h2 class="card-title">Disk Management</h2>
+    <div class="card-actions">
+      <button class="btn btn-secondary" onclick="deleteSelected()">Delete Selected</button>
+      <button class="btn btn-danger" onclick="showPurgeModal()">Purge All</button>
+    </div>
+  </div>
+
+  <div class="disk-summary">
+    <span class="text-secondary">Total: <span class="mono">{{ "%.1f"|format(disk_total / 1073741824) }} GB</span></span>
+    <span class="text-secondary">Used: <span class="mono">{{ "%.1f"|format(disk_used / 1073741824) }} GB</span></span>
+    <span class="text-secondary">Free: <span class="mono">{{ "%.1f"|format(disk_free / 1073741824) }} GB</span></span>
+  </div>
+
+  <div class="table-scroll">
+    <table class="data-table" id="file-table">
+      <thead>
+        <tr>
+          <th class="col-check">
+            <input type="checkbox" id="select-all" />
+          </th>
+          <th>Filename</th>
+          <th>Size</th>
+          <th>Type</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if files %}
+          {% for f in files %}
+          <tr>
+            <td class="col-check">
+              <input type="checkbox" class="file-check" value="{{ f.name }}" />
+            </td>
+            <td class="mono">{{ f.name }}</td>
+            <td class="mono">
+              {% if f.size >= 1073741824 %}
+                {{ "%.1f"|format(f.size / 1073741824) }} GB
+              {% elif f.size >= 1048576 %}
+                {{ "%.1f"|format(f.size / 1048576) }} MB
+              {% elif f.size >= 1024 %}
+                {{ "%.1f"|format(f.size / 1024) }} KB
+              {% else %}
+                {{ f.size }} B
+              {% endif %}
+            </td>
+            <td>
+              {% if f.is_dir %}
+                <span class="badge badge-platform">dir</span>
+              {% else %}
+                <span class="text-secondary">file</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="4" class="empty-state">No files in downloads directory.</td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- System Info -->
+<div class="card section-card">
+  <div class="card-header">
+    <h2 class="card-title">System Info</h2>
+  </div>
+  <table class="info-table">
+    <tbody>
+      <tr>
+        <td class="info-key">Disk Total</td>
+        <td class="mono">{{ "%.2f"|format(disk_total / 1073741824) }} GB</td>
+      </tr>
+      <tr>
+        <td class="info-key">Disk Used</td>
+        <td class="mono">{{ "%.2f"|format(disk_used / 1073741824) }} GB ({{ "%.1f"|format(disk_used / disk_total * 100) if disk_total else 0 }}%)</td>
+      </tr>
+      <tr>
+        <td class="info-key">Disk Free</td>
+        <td class="mono">{{ "%.2f"|format(disk_free / 1073741824) }} GB</td>
+      </tr>
+      <tr>
+        <td class="info-key">Files in Downloads</td>
+        <td class="mono">{{ files|length }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Purge Modal -->
+<div class="modal-overlay" id="purge-modal" style="display:none" role="dialog" aria-modal="true" aria-labelledby="purge-modal-title">
+  <div class="modal-card modal-card--danger">
+    <h2 class="modal-title" id="purge-modal-title">Purge All Files</h2>
+    <p class="modal-body">This will permanently delete <strong>all files</strong> in the downloads directory. This action cannot be undone.</p>
+    <p class="modal-body">Type <strong>PURGE</strong> to confirm:</p>
+    <input type="text" id="purge-confirm" class="filter-input" placeholder="PURGE" autocomplete="off" />
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closePurgeModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="executePurge()">Purge All Files</button>
+    </div>
+  </div>
+</div>
+{% endblock %}

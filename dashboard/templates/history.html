@@ -1,12 +1,135 @@
-<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8"/><title>reclip admin — history</title></head>
-<body>
-<h1>Download History</h1>
-<p><a href="/">Dashboard</a> | <a href="/logout">Logout</a></p>
-<p>Page {{ data.page }} of {{ data.pages }} ({{ data.total }} total)</p>
-{% for row in data.rows %}
-<div>{{ row.job_id }} — {{ row.status }} — {{ row.url }}</div>
-{% endfor %}
-</body>
-</html>
+{% extends "base.html" %}
+{% set active = "history" %}
+
+{% block title %} — history{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Download History</h1>
+
+<!-- Filter bar -->
+<form class="filter-bar" method="get" action="/history">
+  <input
+    type="text"
+    name="user_filter"
+    class="filter-input"
+    placeholder="Search user..."
+    value="{{ user_filter or '' }}"
+  />
+  <select name="platform" class="filter-select">
+    <option value="">All platforms</option>
+    {% for p in ['youtube', 'instagram', 'twitter', 'tiktok', 'reddit', 'twitch', 'other'] %}
+    <option value="{{ p }}"{% if platform == p %} selected{% endif %}>{{ p }}</option>
+    {% endfor %}
+  </select>
+  <select name="status" class="filter-select">
+    <option value="">All statuses</option>
+    <option value="done"{% if status == 'done' %} selected{% endif %}>Done</option>
+    <option value="error"{% if status == 'error' %} selected{% endif %}>Error</option>
+    <option value="started"{% if status == 'started' %} selected{% endif %}>Started</option>
+  </select>
+  <input type="date" name="date_from" class="filter-input" value="{{ date_from or '' }}" />
+  <input type="date" name="date_to" class="filter-input" value="{{ date_to or '' }}" />
+  <button type="submit" class="btn btn-primary">Filter</button>
+  <a href="/history" class="btn btn-secondary">Clear</a>
+</form>
+
+<!-- Results info -->
+{% if data %}
+<div class="results-info">
+  Showing {{ data.rows|length }} of {{ data.total }} downloads &mdash; page {{ data.page }} of {{ data.pages }}
+</div>
+{% endif %}
+
+<!-- Table -->
+<div class="card table-card">
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>User</th>
+          <th>URL</th>
+          <th>Platform</th>
+          <th>Format</th>
+          <th>Quality</th>
+          <th>Size (MB)</th>
+          <th>Status</th>
+          <th>Duration</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if data and data.rows %}
+          {% for row in data.rows %}
+          <tr>
+            <td class="mono text-secondary">{{ row.started_at[:19] if row.started_at else '—' }}</td>
+            <td>{{ row.username or row.user_id or '—' }}</td>
+            <td>
+              {% if row.url %}
+              <a href="{{ row.url }}" target="_blank" rel="noopener" class="url-cell" title="{{ row.url }}">
+                {{ row.url[:50] }}{% if row.url|length > 50 %}…{% endif %}
+              </a>
+              {% else %}—{% endif %}
+            </td>
+            <td>
+              {% if row.platform %}
+              <span class="badge badge-platform">{{ row.platform }}</span>
+              {% else %}—{% endif %}
+            </td>
+            <td class="mono">{{ row.format or '—' }}</td>
+            <td class="mono">{{ row.quality or '—' }}</td>
+            <td class="mono">
+              {% if row.file_size_bytes %}
+                {{ "%.1f"|format(row.file_size_bytes / 1048576) }}
+              {% else %}—{% endif %}
+            </td>
+            <td>
+              {% if row.status == 'done' %}
+                <span class="badge badge-success">done</span>
+              {% elif row.status == 'error' %}
+                <span class="badge badge-danger">error</span>
+              {% elif row.status == 'started' %}
+                <span class="badge badge-warning">started</span>
+              {% else %}
+                <span class="badge">{{ row.status }}</span>
+              {% endif %}
+            </td>
+            <td class="mono">
+              {% if row.download_duration_sec %}
+                {{ "%.1f"|format(row.download_duration_sec) }}s
+              {% else %}—{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="9" class="empty-state">No downloads recorded yet.</td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Pagination -->
+{% if data and data.pages > 1 %}
+<div class="pagination">
+  {% if data.page > 1 %}
+  <a href="?page={{ data.page - 1 }}{% if user_filter %}&user_filter={{ user_filter }}{% endif %}{% if platform %}&platform={{ platform }}{% endif %}{% if status %}&status={{ status }}{% endif %}" class="btn btn-secondary">← Prev</a>
+  {% endif %}
+
+  {% for p in range(1, data.pages + 1) %}
+    {% if p == data.page %}
+    <span class="page-num active">{{ p }}</span>
+    {% elif p == 1 or p == data.pages or (p >= data.page - 2 and p <= data.page + 2) %}
+    <a href="?page={{ p }}{% if user_filter %}&user_filter={{ user_filter }}{% endif %}{% if platform %}&platform={{ platform }}{% endif %}{% if status %}&status={{ status }}{% endif %}" class="page-num">{{ p }}</a>
+    {% elif p == data.page - 3 or p == data.page + 3 %}
+    <span class="page-ellipsis">…</span>
+    {% endif %}
+  {% endfor %}
+
+  {% if data.page < data.pages %}
+  <a href="?page={{ data.page + 1 }}{% if user_filter %}&user_filter={{ user_filter }}{% endif %}{% if platform %}&platform={{ platform }}{% endif %}{% if status %}&status={{ status }}{% endif %}" class="btn btn-secondary">Next →</a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

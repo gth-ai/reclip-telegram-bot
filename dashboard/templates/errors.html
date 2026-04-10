@@ -1,11 +1,61 @@
-<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8"/><title>reclip admin — errors</title></head>
-<body>
-<h1>Download Errors</h1>
-<p><a href="/">Dashboard</a> | <a href="/logout">Logout</a></p>
-{% for row in errors %}
-<div>{{ row.job_id }} — {{ row.error_message }}</div>
-{% endfor %}
-</body>
-</html>
+{% extends "base.html" %}
+{% set active = "errors" %}
+
+{% block title %} — errors{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Download Errors</h1>
+
+<!-- Date filter -->
+<form class="filter-bar" method="get" action="/errors">
+  <input type="date" name="date_from" class="filter-input" value="{{ request.query_params.get('date_from', '') }}" />
+  <input type="date" name="date_to" class="filter-input" value="{{ request.query_params.get('date_to', '') }}" />
+  <button type="submit" class="btn btn-primary">Filter</button>
+  <a href="/errors" class="btn btn-secondary">Clear</a>
+</form>
+
+<div class="card table-card">
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>User</th>
+          <th>URL</th>
+          <th>Platform</th>
+          <th>Error</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if errors %}
+          {% for row in errors %}
+          <tr>
+            <td class="mono text-secondary">{{ row.started_at[:19] if row.started_at else '—' }}</td>
+            <td>{{ row.username or row.user_id or '—' }}</td>
+            <td>
+              {% if row.url %}
+              <a href="{{ row.url }}" target="_blank" rel="noopener" class="url-cell" title="{{ row.url }}">
+                {{ row.url[:60] }}{% if row.url|length > 60 %}…{% endif %}
+              </a>
+              {% else %}—{% endif %}
+            </td>
+            <td>
+              {% if row.platform %}
+              <span class="badge badge-platform">{{ row.platform }}</span>
+              {% else %}—{% endif %}
+            </td>
+            <td class="error-message">{{ row.error_message or '—' }}</td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="5" class="empty-state empty-state--success">
+              <span class="empty-check">✓</span> No errors in the selected period. Nice.
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

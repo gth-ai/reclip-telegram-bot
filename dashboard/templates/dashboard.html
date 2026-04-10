@@ -1,8 +1,97 @@
-<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8"/><title>reclip admin — dashboard</title></head>
-<body>
-<h1>Dashboard</h1>
-<p>Logged in as {{ user }}. <a href="/logout">Logout</a></p>
-</body>
-</html>
+{% extends "base.html" %}
+{% set active = "dashboard" %}
+
+{% block title %} — dashboard{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Dashboard</h1>
+
+<!-- KPI Grid -->
+<div class="kpi-grid">
+  <a href="/history?date=today" class="kpi-card">
+    <div class="kpi-label">Total Downloads Today</div>
+    <div class="kpi-value mono" id="kpi-downloads">--</div>
+    <div class="kpi-trend" id="kpi-downloads-trend"></div>
+  </a>
+  <a href="/history?date=today" class="kpi-card">
+    <div class="kpi-label">Active Users (24h)</div>
+    <div class="kpi-value mono" id="kpi-users">--</div>
+    <div class="kpi-trend" id="kpi-users-trend"></div>
+  </a>
+  <a href="/admin" class="kpi-card">
+    <div class="kpi-label">Disk Usage</div>
+    <div class="kpi-value mono" id="kpi-disk">--</div>
+    <div class="disk-bar-wrap">
+      <div class="disk-bar" id="disk-bar"></div>
+    </div>
+  </a>
+  <a href="/errors" class="kpi-card">
+    <div class="kpi-label">Error Rate</div>
+    <div class="kpi-value mono" id="kpi-errors">--</div>
+    <div class="kpi-trend" id="kpi-errors-trend"></div>
+  </a>
+</div>
+
+<!-- Downloads Over Time -->
+<div class="card section-card">
+  <div class="card-header">
+    <h2 class="card-title">Downloads Over Time</h2>
+    <div class="range-buttons">
+      <button class="range-btn active" data-range="1D">1D</button>
+      <button class="range-btn" data-range="7D">7D</button>
+      <button class="range-btn" data-range="1M">1M</button>
+      <button class="range-btn" data-range="1Y">1Y</button>
+    </div>
+  </div>
+  <div class="chart-wrap">
+    <canvas id="downloads-chart"></canvas>
+  </div>
+</div>
+
+<!-- Bottom grid -->
+<div class="bottom-grid">
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Downloads by Platform</h2>
+    </div>
+    <div class="chart-wrap chart-wrap--short">
+      <canvas id="platform-chart"></canvas>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Top Users</h2>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>User</th>
+          <th class="mono">Downloads</th>
+        </tr>
+      </thead>
+      <tbody id="top-users">
+        <tr><td colspan="2" class="empty-state">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Active Downloads (hidden by default) -->
+<div class="card" id="active-downloads" style="display:none">
+  <div class="card-header">
+    <h2 class="card-title">Active Downloads</h2>
+    <span class="badge badge-warning" id="active-downloads-count">0</span>
+  </div>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>User</th>
+        <th>URL</th>
+        <th>Platform</th>
+        <th>Progress</th>
+      </tr>
+    </thead>
+    <tbody id="active-downloads-body"></tbody>
+  </table>
+</div>
+{% endblock %}
