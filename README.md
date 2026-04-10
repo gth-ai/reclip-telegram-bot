@@ -48,7 +48,7 @@ Three Docker containers via docker-compose:
 
 1. Clone this repository:
 ```bash
-git clone https://github.com/YOUR_USERNAME/reclip_bot.git
+git clone https://github.com/gth-ai/reclip-telegram-bot.git
 cd reclip_bot
 ```
 
