@@ -25,6 +25,16 @@ logger = logging.getLogger(__name__)
 DOWNLOADS_PATH = os.environ.get("DOWNLOADS_PATH", "/downloads")
 URL_REGEX = re.compile(r"https?://[^\s<>\"']+")
 STATE_TTL = 600  # 10 minutes
+CAPTION_MAX = 1000  # Telegram caption limit is 1024, leave headroom
+
+
+def _truncate_caption(text: str) -> str:
+    """Truncate a caption to fit within Telegram's 1024-char limit."""
+    if not text:
+        return ""
+    if len(text) <= CAPTION_MAX:
+        return text
+    return text[: CAPTION_MAX - 1] + "…"
 
 _state: dict[str, dict] = {}
 _stats = {"downloads": 0, "errors": 0, "started": time.time()}
@@ -292,9 +302,9 @@ async def _direct_download(update: Update, status_msg, url: str, fmt: str, forma
         try:
             with open(local_path, "rb") as f:
                 if fmt == "video" and local_path.suffix.lower() == ".mp4":
-                    await update.message.chat.send_video(video=f, caption=title, supports_streaming=True)
+                    await update.message.chat.send_video(video=f, caption=_truncate_caption(title), supports_streaming=True)
                 else:
-                    await update.message.chat.send_document(document=f, caption=title)
+                    await update.message.chat.send_document(document=f, caption=_truncate_caption(title))
             _stats["downloads"] += 1
             try:
                 await event_client.send_download_done(
@@ -401,8 +411,12 @@ async def url_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         uploader = info.get("uploader", "")
         thumbnail = info.get("thumbnail")
 
+        # Telegram caption limit is 1024 chars. Reserve ~200 for metadata lines
+        # and markdown escaping overhead, cap the title at 800 chars.
+        title_short = title if len(title) <= 800 else title[:799] + "…"
+
         caption_lines = [
-            f"*{_escape_md(title)}*",
+            f"*{_escape_md(title_short)}*",
             f"Platform: {_escape_md(extractor)}",
             f"Duration: {_escape_md(duration)}",
         ]
@@ -627,10 +641,10 @@ async def download_and_send(query, entry: dict, format: str, format_id: str | No
             with open(local_path, "rb") as f:
                 if format == "video" and local_path.suffix.lower() == ".mp4":
                     await query.message.chat.send_video(
-                        video=f, caption=title, supports_streaming=True
+                        video=f, caption=_truncate_caption(title), supports_streaming=True
                     )
                 else:
-                    await query.message.chat.send_document(document=f, caption=title)
+                    await query.message.chat.send_document(document=f, caption=_truncate_caption(title))
             _stats["downloads"] += 1
             try:
                 await event_client.send_download_done(
@@ -654,10 +668,11 @@ async def download_and_send(query, entry: dict, format: str, format_id: str | No
                 return
 
     try:
+        sent_text = _truncate_caption(f"Sent: {title}")
         if message.photo:
-            await message.edit_caption(caption=f"Sent: {title}")
+            await message.edit_caption(caption=sent_text)
         else:
-            await message.edit_text(f"Sent: {title}")
+            await message.edit_text(sent_text)
     except Exception:
         pass
 
