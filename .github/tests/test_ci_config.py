@@ -101,7 +101,7 @@ class TestImageTagPattern:
 
     def test_workflow_tags_ghcr_pattern(self):
         workflow = load_yaml(WORKFLOW_PATH)
-        build_step = workflow["jobs"]["build-and-push"]["steps"][-1]
+        build_step = next(s for s in workflow["jobs"]["build-and-push"]["steps"] if "tags" in (s.get("with") or {}))
         # tags is a multi-line string, not a YAML list
         tags_raw = build_step["with"].get("tags", "")
         assert "ghcr.io/" in tags_raw, (
