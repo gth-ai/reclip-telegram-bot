@@ -59,7 +59,7 @@ class TestMatrixCoverage:
 class TestBuildContextConsistency:
     def test_workflow_context_pattern(self):
         workflow = load_yaml(WORKFLOW_PATH)
-        build_step = workflow["jobs"]["build-and-push"]["steps"][-1]
+        build_step = next(s for s in workflow["jobs"]["build-and-push"]["steps"] if "context" in (s.get("with") or {}))
         assert "context" in build_step["with"], "build-push step must set context"
         assert build_step["with"]["context"] == "./${{ matrix.service }}", (
             f"workflow context must be './${{{{ matrix.service }}}}', "
