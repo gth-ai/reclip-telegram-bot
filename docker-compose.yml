@@ -1,5 +1,6 @@
 services:
   reclip:
+    image: ghcr.io/${GHCR_OWNER:-gth-ai}/reclip-telegram-bot/reclip:${IMAGE_TAG:-latest}
     build: ./reclip
     environment:
       - HOST=0.0.0.0
@@ -14,6 +15,7 @@ services:
     restart: unless-stopped
 
   bot:
+    image: ghcr.io/${GHCR_OWNER:-gth-ai}/reclip-telegram-bot/bot:${IMAGE_TAG:-latest}
     build: ./bot
     environment:
       - BOT_TOKEN=${BOT_TOKEN}
@@ -46,6 +48,7 @@ services:
     restart: unless-stopped
 
   dashboard:
+    image: ghcr.io/${GHCR_OWNER:-gth-ai}/reclip-telegram-bot/dashboard:${IMAGE_TAG:-latest}
     build: ./dashboard
     environment:
       - ADMIN_USER=${DASHBOARD_USER:-admin}
